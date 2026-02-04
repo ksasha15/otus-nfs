@@ -1,4 +1,4 @@
-# otus-nfs
+ otus-nfs
 
 **Задание**
 запустить 2 виртуальных машины (сервер NFS и клиента);
@@ -117,5 +117,69 @@ systemd-1 on /mnt type autofs (rw,relatime,fd=72,pgrp=1,timeout=0,minproto=5,max
 192.168.50.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=262144,wsize=262144,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.50.10,mountvers=3,mountport=57872,mountproto=udp,local_lock=none,addr=192.168.50.10)
 root@nfsc:~#
 
+**Проверка**
+root@nfss:~# > /srv/share/upload/check_file
+root@nfss:~# ll /srv/share/upload/
+total 8
+drwxrwxrwx 2 nobody nogroup 4096 Feb  4 14:44 ./
+drwxr-xr-x 3 nobody nogroup 4096 Feb  4 14:04 ../
+-rw-r--r-- 1 root   root       0 Feb  4 14:44 check_file
+root@nfss:~#
 
+root@nfsc:~# ll /mnt/upload/
+total 8
+drwxrwxrwx 2 nobody nogroup 4096 Feb  4 14:44 ./
+drwxr-xr-x 3 nobody nogroup 4096 Feb  4 14:04 ../
+-rw-r--r-- 1 root   root       0 Feb  4 14:44 check_file
+root@nfsc:~# touch /mnt/upload/client_file
+root@nfsc:~# ll /mnt/upload/
+total 8
+drwxrwxrwx 2 nobody nogroup 4096 Feb  4 14:45 ./
+drwxr-xr-x 3 nobody nogroup 4096 Feb  4 14:04 ../
+-rw-r--r-- 1 root   root       0 Feb  4 14:44 check_file
+-rw-r--r-- 1 nobody nogroup    0 Feb  4 14:45 client_file
+root@nfsc:~#
 
+root@nfss:~# reboot now
+
+Broadcast message from root@nfss on pts/1 (Wed 2026-02-04 14:50:33 UTC):
+
+The system will reboot now!
+
+root@nfss:~#
+
+Last login: Wed Feb  4 13:50:06 2026 from 192.168.50.1
+u24@nfss:~$ ll /srv/share/upload/
+total 8
+drwxrwxrwx 2 nobody nogroup 4096 Feb  4 14:45 ./
+drwxr-xr-x 3 nobody nogroup 4096 Feb  4 14:04 ../
+-rw-r--r-- 1 root   root       0 Feb  4 14:44 check_file
+-rw-r--r-- 1 nobody nogroup    0 Feb  4 14:45 client_file
+u24@nfss:~$ exportfs -s
+exportfs: could not open /var/lib/nfs/.etab.lock for locking: errno 13 (Permission denied)
+u24@nfss:~$ sudo -i
+[sudo] password for u24:
+root@nfss:~# exportfs -s
+/srv/share  192.168.50.11/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+root@nfss:~# show
+showconsolefont  showkey          showmount
+root@nfss:~# showmount -a 192.168.50.10
+All mount points on 192.168.50.10:
+192.168.50.11:/srv/share
+root@nfss:~#
+
+u24@nfsc:~$ showmount -a 192.168.50.10
+All mount points on 192.168.50.10:
+192.168.50.11:/srv/share
+u24@nfsc:~$ showmount -a 192.168.50.11
+u24@nfsc:~$ mount | grep mnt
+systemd-1 on /mnt type autofs (rw,relatime,fd=55,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=4114)
+192.168.50.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=262144,wsize=262144,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.50.10,mountvers=3,mountport=57872,mountproto=udp,local_lock=none,addr=192.168.50.10)
+u24@nfsc:~$ ll /mnt/upload/
+total 8
+drwxrwxrwx 2 nobody nogroup 4096 Feb  4 14:45 ./
+drwxr-xr-x 3 nobody nogroup 4096 Feb  4 14:04 ../
+-rw-r--r-- 1 root   root       0 Feb  4 14:44 check_file
+-rw-r--r-- 1 nobody nogroup    0 Feb  4 14:45 client_file
+u24@nfsc:~$ cat Final_check > /mnt/upload/final_check
+cat: Final_check: No such file or directory
